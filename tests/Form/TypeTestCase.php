@@ -54,12 +54,10 @@ abstract class TypeTestCase extends BaseTypeTestCase
 
     protected function setUp(): void
     {
+        $this->dispatcher = self::createStub(EventDispatcherInterface::class);
         parent::setUp();
 
-        $validator = $this->getMockBuilder(ValidatorInterface::class)
-            ->disableOriginalConstructor()
-            ->getMock()
-        ;
+        $validator = self::createStub(ValidatorInterface::class);
         $validator->method('validate')->willReturn(new ConstraintViolationList());
 
         $this->factory = Forms::createFormFactoryBuilder()
@@ -68,15 +66,11 @@ abstract class TypeTestCase extends BaseTypeTestCase
                 new FormTypeValidatorExtension($validator)
             )
             ->addTypeGuesser(
-                $this->createMock(ValidatorTypeGuesser::class)
+                self::createStub(ValidatorTypeGuesser::class)
             )
             ->getFormFactory()
         ;
 
-        $this->dispatcher = $this->getMockBuilder(EventDispatcherInterface::class)
-            ->disableOriginalConstructor()
-            ->getMock()
-        ;
         $this->builder = new FormBuilder(null, null, $this->dispatcher, $this->factory);
     }
 
