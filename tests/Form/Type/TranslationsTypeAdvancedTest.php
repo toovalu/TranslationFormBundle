@@ -95,12 +95,11 @@ final class TranslationsTypeAdvancedTest extends TypeTestCase
 
     protected function getExtensions(): array
     {
-        $translationsType = $this->getConfiguredTranslationsType($this->locales, $this->defaultLocale, $this->requiredLocales);
-        $autoFormType = $this->getConfiguredAutoFormType();
-
-        return [new PreloadedExtension([
-            $translationsType,
-            $autoFormType,
-        ], [])];
+        return [
+            ...$this->getFormExtensionsWithAutoType(),
+            new PreloadedExtension([
+                $this->getConfiguredTranslationsType($this->locales, $this->defaultLocale, $this->requiredLocales),
+            ], []),
+        ];
     }
 }

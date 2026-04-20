@@ -17,6 +17,7 @@ use A2lix\TranslationFormBundle\Form\Type\TranslationsType;
 use A2lix\TranslationFormBundle\Tests\Fixtures\Entity\Product;
 use A2lix\TranslationFormBundle\Tests\Fixtures\Entity\ProductTranslation;
 use A2lix\TranslationFormBundle\Tests\Form\TypeTestCase;
+use PHPUnit\Framework\Attributes\Depends;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\PreloadedExtension;
@@ -108,9 +109,7 @@ final class TranslationsTypeSimpleTest extends TypeTestCase
         return $product;
     }
 
-    /**
-     * @depends testCreationForm
-     */
+    #[Depends('testCreationForm')]
     public function testEditionForm(Product $product): void
     {
         $product->getTranslations()['en']->setDescription('desc ennnnnnn');
@@ -155,12 +154,11 @@ final class TranslationsTypeSimpleTest extends TypeTestCase
 
     protected function getExtensions(): array
     {
-        $translationsType = $this->getConfiguredTranslationsType($this->locales, $this->defaultLocale, $this->requiredLocales);
-        $autoFormType = $this->getConfiguredAutoFormType();
-
-        return [new PreloadedExtension([
-            $translationsType,
-            $autoFormType,
-        ], [])];
+        return [
+            ...$this->getFormExtensionsWithAutoType(),
+            new PreloadedExtension([
+                $this->getConfiguredTranslationsType($this->locales, $this->defaultLocale, $this->requiredLocales),
+            ], []),
+        ];
     }
 }

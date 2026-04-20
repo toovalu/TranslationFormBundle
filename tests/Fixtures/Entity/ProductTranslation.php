@@ -16,7 +16,7 @@ namespace A2lix\TranslationFormBundle\Tests\Fixtures\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Table(name: 'product_translations')]
-#[ORM\UniqueConstraint(name: 'lookup_unique_idx', columns: ['locale', 'object_id'])]
+#[ORM\UniqueConstraint(name: 'lookup_unique_idx', columns: ['locale', 'translatable_id'])]
 #[ORM\Entity]
 class ProductTranslation
 {

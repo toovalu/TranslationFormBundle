@@ -13,8 +13,8 @@ declare(strict_types=1);
 
 namespace A2lix\TranslationFormBundle\Form\EventListener;
 
-use A2lix\AutoFormBundle\Form\Manipulator\FormManipulatorInterface;
-use A2lix\AutoFormBundle\Form\Type\AutoFormType;
+use A2lix\AutoFormBundle\Form\Type\AutoType;
+use A2lix\TranslationFormBundle\Form\TranslationFieldsConfigProviderInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -23,7 +23,7 @@ use Symfony\Component\Form\FormInterface;
 class TranslationsListener implements EventSubscriberInterface
 {
     public function __construct(
-        private readonly FormManipulatorInterface $formManipulator,
+        private readonly TranslationFieldsConfigProviderInterface $fieldsConfigProvider,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -51,13 +51,16 @@ class TranslationsListener implements EventSubscriberInterface
                 continue;
             }
 
-            $form->add($locale, AutoFormType::class, [
+            $form->add($locale, AutoType::class, [
                 'data_class' => $translationClass,
                 'label' => $formOptions['locale_labels'][$locale] ?? null,
                 'required' => \in_array($locale, $formOptions['required_locales'], true),
                 'block_name' => ('field' === $formOptions['theming_granularity']) ? 'locale' : null,
-                'fields' => $fieldsOptions[$locale],
-                'excluded_fields' => $formOptions['excluded_fields'],
+                'children' => array_map($this->normalizeLegacyFieldOptions(...), $fieldsOptions[$locale]),
+                'children_excluded' => array_values(array_unique(array_merge(
+                    ['id', 'locale', 'translatable'],
+                    $formOptions['excluded_fields'],
+                ))),
             ]);
         }
     }
@@ -87,7 +90,7 @@ class TranslationsListener implements EventSubscriberInterface
     {
         $fieldsOptions = [];
 
-        $fieldsConfig = $this->formManipulator->getFieldsConfig($form);
+        $fieldsConfig = $this->fieldsConfigProvider->getFieldsConfig($form);
         foreach ($fieldsConfig as $fieldName => $fieldConfig) {
             // Simplest case: General options for all locales
             if (!isset($fieldConfig['locale_options'])) {
@@ -105,12 +108,31 @@ class TranslationsListener implements EventSubscriberInterface
             foreach ($formOptions['locales'] as $locale) {
                 $localeFieldOptions = $localesFieldOptions[$locale] ?? [];
                 if (!isset($localeFieldOptions['display']) || (true === $localeFieldOptions['display'])) {
-                    $fieldsOptions[$locale][$fieldName] = $localeFieldOptions + $fieldConfig;
+                    $fieldsOptions[$locale][$fieldName] = $this->normalizeLegacyFieldOptions($localeFieldOptions + $fieldConfig);
                 }
             }
         }
 
         return $fieldsOptions;
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     *
+     * @return array<string, mixed>
+     */
+    private function normalizeLegacyFieldOptions(array $options): array
+    {
+        if (isset($options['field_type']) && !isset($options['child_type'])) {
+            $options['child_type'] = $options['field_type'];
+            unset($options['field_type']);
+        }
+
+        if (isset($options['entry_options']) && \is_array($options['entry_options'])) {
+            $options['entry_options'] = $this->normalizeLegacyFieldOptions($options['entry_options']);
+        }
+
+        return $options;
     }
 
     private function getTranslationClass(FormInterface $form): string

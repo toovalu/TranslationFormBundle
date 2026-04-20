@@ -37,39 +37,19 @@ final class SimpleProviderTest extends TestCase
 
     public function testDefaultLocaleIsInLocales(): void
     {
-        // Get mock, without the constructor being called
-        $mock = $this->getMockBuilder(SimpleProvider::class)
-            ->disableOriginalConstructor()
-            ->getMock()
-        ;
-
-        // Set expectations for constructor calls
-        $this->expectException('InvalidArgumentException');
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Default locale `de` not found within the configured locales `[es,en]`.'
             .' Perhaps you need to add it to your `a2lix_translation_form.locales` bundle configuration?');
 
-        // Now call the constructor
-        $reflectedClass = new \ReflectionClass(SimpleProvider::class);
-        $constructor = $reflectedClass->getConstructor();
-        $constructor->invoke($mock, ['es', 'en'], 'de', []);
+        new SimpleProvider(['es', 'en'], 'de', []);
     }
 
     public function testRequiredLocaleAreInLocales(): void
     {
-        // Get mock, without the constructor being called
-        $mock = $this->getMockBuilder(SimpleProvider::class)
-            ->disableOriginalConstructor()
-            ->getMock()
-        ;
-
-        // Set expectations for constructor calls
-        $this->expectException('InvalidArgumentException');
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Required locales should be contained in locales');
 
-        // Now call the constructor
-        $reflectedClass = new \ReflectionClass(SimpleProvider::class);
-        $constructor = $reflectedClass->getConstructor();
-        $constructor->invoke($mock, ['es', 'en'], 'en', ['en', 'pt']);
+        new SimpleProvider(['es', 'en'], 'en', ['en', 'pt']);
     }
 
     public function testGetLocales(): void
