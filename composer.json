@@ -30,31 +30,34 @@
         }
     ],
     "require": {
-        "php": "^8.1",
-        "a2lix/auto-form-bundle": "^0.4",
+        "php": "^8.5",
+        "a2lix/auto-form-bundle": "^1.0",
         "doctrine/dbal": "^4.0",
+        "doctrine/orm": "^3.0",
         "doctrine/persistence": "^4.0",
-        "symfony/config": "^5.4.30|^6.3|^7.0",
-        "symfony/dependency-injection": "^5.4.30|^6.3|^7.0",
-        "symfony/doctrine-bridge": "^7.3",
-        "symfony/event-dispatcher": "^5.4.30|^6.3|^7.0",
-        "symfony/form": "^5.4.30|^6.3|^7.0",
-        "symfony/http-foundation": "^5.4.30|^6.3|^7.0",
-        "symfony/http-kernel": "^5.4.30|^6.3|^7.0",
-        "symfony/options-resolver": "^5.4.30|^6.3|^7.0"
+        "phpdocumentor/reflection-docblock": "^5.6|^6.0",
+        "symfony/config": "^7.4|^8.0",
+        "symfony/dependency-injection": "^7.4|^8.0",
+        "symfony/doctrine-bridge": "^7.4|^8.0",
+        "symfony/event-dispatcher": "^7.4|^8.0",
+        "symfony/form": "^7.4|^8.0",
+        "symfony/http-foundation": "^7.4|^8.0",
+        "symfony/http-kernel": "^7.4|^8.0",
+        "symfony/options-resolver": "^7.4|^8.0",
+        "symfony/property-info": "^7.4|^8.0",
+        "symfony/type-info": "^7.4|^8.0"
     },
     "require-dev": {
-        "doctrine/orm": "^3.0",
         "friendsofphp/php-cs-fixer": "^3.45",
         "kubawerlos/php-cs-fixer-custom-fixers": "^3.18",
-        "matthiasnoback/symfony-dependency-injection-test": "^5.0",
-        "phpstan/phpstan": "^1.10",
-        "rector/rector": "^0.18",
-        "symfony/cache": "^5.4.30|^6.3|^7.0",
-        "symfony/phpunit-bridge": "^5.4.30|^6.3|^7.0",
-        "symfony/validator": "^5.4.30|^6.3|^7.0",
+        "matthiasnoback/symfony-dependency-injection-test": "^6.0",
+        "phpstan/phpstan": "^2.0",
+        "rector/rector": "^2.0",
+        "symfony/cache": "^7.4|^8.0",
+        "symfony/phpunit-bridge": "^7.4|^8.0",
+        "symfony/validator": "^7.4|^8.0",
         "toovalu-github/doctrine-behaviors": "^3.0",
-        "vimeo/psalm": "^5.18"
+        "vimeo/psalm": "^6.0"
     },
     "suggest": {
         "knplabs/doctrine-behaviors": "For Knp strategy",
@@ -68,7 +71,7 @@
             "psalm"
         ],
         "phpunit": [
-            "SYMFONY_DEPRECATIONS_HELPER=max[self]=0 simple-phpunit"
+            "SYMFONY_DEPRECATIONS_HELPER=max[self]=0 phpunit"
         ]
     },
     "config": {
@@ -82,7 +85,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "3.x-dev"
+            "dev-master": "4.x-dev"
         }
     }
 }

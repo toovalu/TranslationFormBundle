@@ -18,6 +18,7 @@ use A2lix\TranslationFormBundle\Tests\Fixtures\Entity\MediaLocalize;
 use A2lix\TranslationFormBundle\Tests\Fixtures\Entity\Product;
 use A2lix\TranslationFormBundle\Tests\Fixtures\Form\MediaLocalizeType;
 use A2lix\TranslationFormBundle\Tests\Form\TypeTestCase;
+use PHPUnit\Framework\Attributes\Depends;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\PreloadedExtension;
@@ -113,9 +114,7 @@ final class TranslationsFormsTypeSimpleTest extends TypeTestCase
         return $product;
     }
 
-    /**
-     * @depends testCreationForm
-     */
+    #[Depends('testCreationForm')]
     public function testEditionForm(Product $product): void
     {
         $product->getMedias()['en']->setUrl('http://ennnnn');

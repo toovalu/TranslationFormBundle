@@ -11,8 +11,17 @@
         <service id="a2lix_translation_form.locale.simple_provider" class="A2lix\TranslationFormBundle\Locale\SimpleProvider"></service>
 
         <!-- Form Listeners -->
+        <service id="a2lix_translation_form.form.doctrine_translation_fields_config_provider" class="A2lix\TranslationFormBundle\Form\Doctrine\DoctrineTranslationFieldsConfigProvider">
+            <argument type="service" id="doctrine.orm.entity_manager"/>
+            <argument type="collection">
+                <argument>id</argument>
+                <argument>locale</argument>
+                <argument>translatable</argument>
+            </argument>
+        </service>
+
         <service id="a2lix_translation_form.form.event_listener.translations_listener" class="A2lix\TranslationFormBundle\Form\EventListener\TranslationsListener">
-            <argument type="service" id="a2lix_auto_form.manipulator.default"/>
+            <argument type="service" id="a2lix_translation_form.form.doctrine_translation_fields_config_provider"/>
         </service>
 
         <service id="a2lix_translation_form.form.event_listener.translations_form_listener" class="A2lix\TranslationFormBundle\Form\EventListener\TranslationsFormsListener"></service>

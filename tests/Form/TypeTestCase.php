@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace A2lix\TranslationFormBundle\Tests\Form;
 
-use A2lix\AutoFormBundle\Form\EventListener\AutoFormListener;
-use A2lix\AutoFormBundle\Form\Manipulator\DoctrineORMManipulator;
-use A2lix\AutoFormBundle\Form\Type\AutoFormType;
-use A2lix\AutoFormBundle\ObjectInfo\DoctrineORMInfo;
+use A2lix\AutoFormBundle\Form\Builder\AutoTypeBuilder;
+use A2lix\AutoFormBundle\Form\Type\AutoType;
+use A2lix\AutoFormBundle\Form\TypeGuesser\TypeInfoTypeGuesser;
+use A2lix\TranslationFormBundle\Form\Doctrine\DoctrineTranslationFieldsConfigProvider;
 use A2lix\TranslationFormBundle\Form\EventListener\TranslationsFormsListener;
 use A2lix\TranslationFormBundle\Form\EventListener\TranslationsListener;
 use A2lix\TranslationFormBundle\Form\Type\TranslationsFormsType;
@@ -24,19 +24,33 @@ use A2lix\TranslationFormBundle\Form\Type\TranslationsType;
 use A2lix\TranslationFormBundle\Locale\SimpleProvider;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\ORMSetup;
+use Doctrine\ORM\Tools\SchemaTool;
+use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Bridge\Doctrine\Form\DoctrineOrmExtension;
+use Symfony\Bridge\Doctrine\PropertyInfo\DoctrineExtractor;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Form\Extension\Validator\Type\FormTypeValidatorExtension;
 use Symfony\Component\Form\Extension\Validator\ValidatorTypeGuesser;
 use Symfony\Component\Form\FormBuilder;
 use Symfony\Component\Form\Forms;
+use Symfony\Component\Form\FormTypeGuesserChain;
+use Symfony\Component\Form\PreloadedExtension;
 use Symfony\Component\Form\Test\TypeTestCase as BaseTypeTestCase;
+use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
+use Symfony\Component\PropertyInfo\Extractor\PhpStanExtractor;
+use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
+use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
+use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 abstract class TypeTestCase extends BaseTypeTestCase
 {
-    protected ?DoctrineORMManipulator $doctrineORMManipulator = null;
+    private ?EntityManagerInterface $entityManager = null;
+
+    private ?DoctrineTranslationFieldsConfigProvider $fieldsConfigProvider = null;
 
     protected function setUp(): void
     {
@@ -66,30 +80,29 @@ abstract class TypeTestCase extends BaseTypeTestCase
         $this->builder = new FormBuilder(null, null, $this->dispatcher, $this->factory);
     }
 
-    protected function getDoctrineORMFormManipulator(): DoctrineORMManipulator
+    protected function getDoctrineTranslationFieldsConfigProvider(): DoctrineTranslationFieldsConfigProvider
     {
-        if (null !== $this->doctrineORMManipulator) {
-            return $this->doctrineORMManipulator;
+        if (null !== $this->fieldsConfigProvider) {
+            return $this->fieldsConfigProvider;
         }
 
-        $config = ORMSetup::createAttributeMetadataConfiguration([__DIR__.'/../Fixtures/Entity'], true);
-        $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true], $config);
-        $entityManager = new EntityManager($connection, $config);
-        $doctrineORMInfo = new DoctrineORMInfo($entityManager->getMetadataFactory());
-
-        return $this->doctrineORMManipulator = new DoctrineORMManipulator($doctrineORMInfo, ['id', 'locale', 'translatable']);
+        return $this->fieldsConfigProvider = new DoctrineTranslationFieldsConfigProvider(
+            $this->getEntityManager(),
+            ['id', 'locale', 'translatable']
+        );
     }
 
-    protected function getConfiguredAutoFormType(): AutoFormType
+    protected function getConfiguredAutoFormType(): AutoType
     {
-        $autoFormListener = new AutoFormListener($this->getDoctrineORMFormManipulator());
-
-        return new AutoFormType($autoFormListener);
+        return new AutoType(
+            new AutoTypeBuilder($this->getPropertyInfoExtractor()),
+            ['id', 'locale', 'translatable']
+        );
     }
 
     protected function getConfiguredTranslationsType(array $locales, string $defaultLocale, array $requiredLocales): TranslationsType
     {
-        $translationsListener = new TranslationsListener($this->getDoctrineORMFormManipulator());
+        $translationsListener = new TranslationsListener($this->getDoctrineTranslationFieldsConfigProvider());
         $localProvider = new SimpleProvider($locales, $defaultLocale, $requiredLocales);
 
         return new TranslationsType($translationsListener, $localProvider);
@@ -101,5 +114,72 @@ abstract class TypeTestCase extends BaseTypeTestCase
         $localProvider = new SimpleProvider($locales, $defaultLocale, $requiredLocales);
 
         return new TranslationsFormsType($translationsFormsListener, $localProvider);
+    }
+
+    protected function getFormExtensionsWithAutoType(): array
+    {
+        $managerRegistryStub = self::createStub(ManagerRegistry::class);
+        $managerRegistryStub
+            ->method('getManager')
+            ->willReturn($this->getEntityManager())
+        ;
+        $managerRegistryStub
+            ->method('getManagers')
+            ->willReturn(['default' => $this->getEntityManager()])
+        ;
+
+        return [
+            new DoctrineOrmExtension($managerRegistryStub),
+            new PreloadedExtension(
+                [$this->getConfiguredAutoFormType()],
+                [],
+                new FormTypeGuesserChain([
+                    new TypeInfoTypeGuesser(TypeResolver::create()),
+                ]),
+            ),
+        ];
+    }
+
+    private function getEntityManager(): EntityManagerInterface
+    {
+        if (null !== $this->entityManager) {
+            return $this->entityManager;
+        }
+
+        $config = ORMSetup::createAttributeMetadataConfiguration([__DIR__.'/../Fixtures/Entity'], true);
+        if (\PHP_VERSION_ID >= 80400) {
+            $config->enableNativeLazyObjects(true);
+        }
+
+        $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true], $config);
+
+        $this->entityManager = new EntityManager($connection, $config);
+        $tool = new SchemaTool($this->entityManager);
+        $tool->createSchema($this->entityManager->getMetadataFactory()->getAllMetadata());
+
+        return $this->entityManager;
+    }
+
+    private function getPropertyInfoExtractor(): PropertyInfoExtractor
+    {
+        $doctrineExtractor = new DoctrineExtractor($this->getEntityManager());
+        $reflectionExtractor = new ReflectionExtractor();
+
+        return new PropertyInfoExtractor(
+            listExtractors: [
+                $reflectionExtractor,
+                $doctrineExtractor,
+            ],
+            typeExtractors: [
+                $doctrineExtractor,
+                new PhpStanExtractor(),
+                new PhpDocExtractor(),
+                $reflectionExtractor,
+            ],
+            accessExtractors: [
+                $doctrineExtractor,
+                $reflectionExtractor,
+            ]
+        );
     }
 }
