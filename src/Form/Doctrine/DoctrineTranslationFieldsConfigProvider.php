@@ -194,7 +194,7 @@ final class DoctrineTranslationFieldsConfigProvider implements TranslationFields
     private function getDataClass(FormInterface $form): string
     {
         if (null !== $dataClass = $form->getConfig()->getDataClass()) {
-            if (false === $pos = strrpos((string) $dataClass, '\\__CG__\\')) {
+            if (false === $pos = strrpos((string) $dataClass, '\__CG__\\')) {
                 return $dataClass;
             }
 
