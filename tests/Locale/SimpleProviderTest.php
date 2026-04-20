@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace A2lix\TranslationFormBundle\Tests\Locale;
 
 use A2lix\TranslationFormBundle\Locale\SimpleProvider;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -37,33 +38,19 @@ final class SimpleProviderTest extends TestCase
 
     public function testDefaultLocaleIsInLocales(): void
     {
-        $stub = self::getStubBuilder(SimpleProvider::class)
-            ->disableOriginalConstructor()
-            ->getStub()
-        ;
-
-        $this->expectException('InvalidArgumentException');
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Default locale `de` not found within the configured locales `[es,en]`.'
             .' Perhaps you need to add it to your `a2lix_translation_form.locales` bundle configuration?');
 
-        $reflectedClass = new \ReflectionClass(SimpleProvider::class);
-        $constructor = $reflectedClass->getConstructor();
-        $constructor->invoke($stub, ['es', 'en'], 'de', []);
+        new SimpleProvider(['es', 'en'], 'de', []);
     }
 
     public function testRequiredLocaleAreInLocales(): void
     {
-        $stub = self::getStubBuilder(SimpleProvider::class)
-            ->disableOriginalConstructor()
-            ->getStub()
-        ;
-
-        $this->expectException('InvalidArgumentException');
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Required locales should be contained in locales');
 
-        $reflectedClass = new \ReflectionClass(SimpleProvider::class);
-        $constructor = $reflectedClass->getConstructor();
-        $constructor->invoke($stub, ['es', 'en'], 'en', ['en', 'pt']);
+        new SimpleProvider(['es', 'en'], 'en', ['en', 'pt']);
     }
 
     public function testGetLocales(): void
