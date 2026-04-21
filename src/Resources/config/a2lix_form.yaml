@@ -1,0 +1,50 @@
+services:
+    _defaults:
+        public: false
+
+    a2lix_translation_form.locale.simple_provider:
+        class: A2lix\TranslationFormBundle\Locale\SimpleProvider
+
+    a2lix_translation_form.form.doctrine_translation_fields_config_provider:
+        class: A2lix\TranslationFormBundle\Form\Doctrine\DoctrineTranslationFieldsConfigProvider
+        arguments:
+            - '@doctrine.orm.entity_manager'
+            - ['id', 'locale', 'translatable']
+
+    a2lix_translation_form.form.event_listener.translations_listener:
+        class: A2lix\TranslationFormBundle\Form\EventListener\TranslationsListener
+        arguments:
+            - '@a2lix_translation_form.form.doctrine_translation_fields_config_provider'
+
+    a2lix_translation_form.form.event_listener.translations_form_listener:
+        class: A2lix\TranslationFormBundle\Form\EventListener\TranslationsFormsListener
+
+    a2lix_translation_form.form.type.translations_type:
+        class: A2lix\TranslationFormBundle\Form\Type\TranslationsType
+        arguments:
+            - '@a2lix_translation_form.form.event_listener.translations_listener'
+            - '@a2lix_translation_form.locale_provider.default'
+        tags:
+            - { name: form.type }
+
+    a2lix_translation_form.form.type.translations_forms_type:
+        class: A2lix\TranslationFormBundle\Form\Type\TranslationsFormsType
+        arguments:
+            - '@a2lix_translation_form.form.event_listener.translations_form_listener'
+            - '@a2lix_translation_form.locale_provider.default'
+        tags:
+            - { name: form.type }
+
+    a2lix_translation_form.form.type.translations_locales_selector_type:
+        class: A2lix\TranslationFormBundle\Form\Type\TranslationsLocalesSelectorType
+        arguments:
+            - '@a2lix_translation_form.locale_provider.default'
+        tags:
+            - { name: form.type }
+
+    a2lix_translation_form.form.type.translated_entity_type:
+        class: A2lix\TranslationFormBundle\Form\Type\TranslatedEntityType
+        arguments:
+            - '@request_stack'
+        tags:
+            - { name: form.type }
