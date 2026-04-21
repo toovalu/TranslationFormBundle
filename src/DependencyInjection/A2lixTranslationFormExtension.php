@@ -16,7 +16,7 @@ namespace A2lix\TranslationFormBundle\DependencyInjection;
 use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
+use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
 class A2lixTranslationFormExtension extends Extension
@@ -26,8 +26,8 @@ class A2lixTranslationFormExtension extends Extension
         $processor = new Processor();
         $config = $processor->processConfiguration(new Configuration(), $configs);
 
-        $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
-        $loader->load('a2lix_form.xml');
+        $loader = new YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+        $loader->load('a2lix_form.yaml');
 
         $container->setParameter('a2lix_translation_form.locale_provider', $config['locale_provider']);
         $container->setParameter('a2lix_translation_form.locales', $config['locales']);
