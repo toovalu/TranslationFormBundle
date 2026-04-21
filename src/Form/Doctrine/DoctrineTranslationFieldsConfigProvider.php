@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace A2lix\TranslationFormBundle\Form\Doctrine;
 
-use A2lix\AutoFormBundle\Form\Type\AutoType;
+use A2lix\AutoFormBundle\Form\Type\AutoFormType;
 use A2lix\TranslationFormBundle\Form\TranslationFieldsConfigProviderInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -21,8 +21,8 @@ use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\FormInterface;
 
 /**
- * Builds per-field options for {@see AutoType} from Doctrine ORM metadata (same role as
- * AutoFormBundle 0.x DoctrineORMManipulator and DoctrineORMInfo).
+ * Builds per-field options for {@see AutoFormType} from Doctrine ORM metadata (same role as
+ * AutoFormBundle's DoctrineORMManipulator and DoctrineORMInfo).
  */
 final class DoctrineTranslationFieldsConfigProvider implements TranslationFieldsConfigProviderInterface
 {
@@ -135,9 +135,9 @@ final class DoctrineTranslationFieldsConfigProvider implements TranslationFields
      */
     private function normalizeLegacyFieldOptions(array $formFieldConfig): array
     {
-        if (isset($formFieldConfig['field_type']) && !isset($formFieldConfig['child_type'])) {
-            $formFieldConfig['child_type'] = $formFieldConfig['field_type'];
-            unset($formFieldConfig['field_type']);
+        if (isset($formFieldConfig['child_type']) && !isset($formFieldConfig['field_type'])) {
+            $formFieldConfig['field_type'] = $formFieldConfig['child_type'];
+            unset($formFieldConfig['child_type']);
         }
 
         if (isset($formFieldConfig['entry_options']) && \is_array($formFieldConfig['entry_options'])) {
@@ -169,7 +169,7 @@ final class DoctrineTranslationFieldsConfigProvider implements TranslationFields
 
             if ($metadata->isSingleValuedAssociation($assocName)) {
                 $assocsConfigs[$assocName] = [
-                    'child_type' => AutoType::class,
+                    'field_type' => AutoFormType::class,
                     'data_class' => $class,
                     'required' => false,
                 ];
@@ -178,8 +178,8 @@ final class DoctrineTranslationFieldsConfigProvider implements TranslationFields
             }
 
             $assocsConfigs[$assocName] = [
-                'child_type' => CollectionType::class,
-                'entry_type' => AutoType::class,
+                'field_type' => CollectionType::class,
+                'entry_type' => AutoFormType::class,
                 'entry_options' => [
                     'data_class' => $class,
                 ],

@@ -13,9 +13,10 @@ declare(strict_types=1);
 
 namespace A2lix\TranslationFormBundle\Tests\Form;
 
-use A2lix\AutoFormBundle\Form\Builder\AutoTypeBuilder;
-use A2lix\AutoFormBundle\Form\Type\AutoType;
-use A2lix\AutoFormBundle\Form\TypeGuesser\TypeInfoTypeGuesser;
+use A2lix\AutoFormBundle\Form\EventListener\AutoFormListener;
+use A2lix\AutoFormBundle\Form\Manipulator\DoctrineORMManipulator;
+use A2lix\AutoFormBundle\Form\Type\AutoFormType;
+use A2lix\AutoFormBundle\ObjectInfo\DoctrineORMInfo;
 use A2lix\TranslationFormBundle\Form\Doctrine\DoctrineTranslationFieldsConfigProvider;
 use A2lix\TranslationFormBundle\Form\EventListener\TranslationsFormsListener;
 use A2lix\TranslationFormBundle\Form\EventListener\TranslationsListener;
@@ -29,20 +30,13 @@ use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bridge\Doctrine\Form\DoctrineOrmExtension;
-use Symfony\Bridge\Doctrine\PropertyInfo\DoctrineExtractor;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Form\Extension\Validator\Type\FormTypeValidatorExtension;
 use Symfony\Component\Form\Extension\Validator\ValidatorTypeGuesser;
 use Symfony\Component\Form\FormBuilder;
 use Symfony\Component\Form\Forms;
-use Symfony\Component\Form\FormTypeGuesserChain;
 use Symfony\Component\Form\PreloadedExtension;
 use Symfony\Component\Form\Test\TypeTestCase as BaseTypeTestCase;
-use Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor;
-use Symfony\Component\PropertyInfo\Extractor\PhpStanExtractor;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
-use Symfony\Component\PropertyInfo\PropertyInfoExtractor;
-use Symfony\Component\TypeInfo\TypeResolver\TypeResolver;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -86,12 +80,12 @@ abstract class TypeTestCase extends BaseTypeTestCase
         );
     }
 
-    protected function getConfiguredAutoFormType(): AutoType
+    protected function getConfiguredAutoFormType(): AutoFormType
     {
-        return new AutoType(
-            new AutoTypeBuilder($this->getPropertyInfoExtractor()),
-            ['id', 'locale', 'translatable']
-        );
+        $doctrineOrmInfo = new DoctrineORMInfo($this->getEntityManager()->getMetadataFactory());
+        $manipulator = new DoctrineORMManipulator($doctrineOrmInfo, ['id', 'locale', 'translatable']);
+
+        return new AutoFormType(new AutoFormListener($manipulator));
     }
 
     protected function getConfiguredTranslationsType(array $locales, string $defaultLocale, array $requiredLocales): TranslationsType
@@ -127,9 +121,6 @@ abstract class TypeTestCase extends BaseTypeTestCase
             new PreloadedExtension(
                 [$this->getConfiguredAutoFormType()],
                 [],
-                new FormTypeGuesserChain([
-                    new TypeInfoTypeGuesser(TypeResolver::create()),
-                ]),
             ),
         ];
     }
@@ -152,28 +143,5 @@ abstract class TypeTestCase extends BaseTypeTestCase
         $tool->createSchema($this->entityManager->getMetadataFactory()->getAllMetadata());
 
         return $this->entityManager;
-    }
-
-    private function getPropertyInfoExtractor(): PropertyInfoExtractor
-    {
-        $doctrineExtractor = new DoctrineExtractor($this->getEntityManager());
-        $reflectionExtractor = new ReflectionExtractor();
-
-        return new PropertyInfoExtractor(
-            listExtractors: [
-                $reflectionExtractor,
-                $doctrineExtractor,
-            ],
-            typeExtractors: [
-                $doctrineExtractor,
-                new PhpStanExtractor(),
-                new PhpDocExtractor(),
-                $reflectionExtractor,
-            ],
-            accessExtractors: [
-                $doctrineExtractor,
-                $reflectionExtractor,
-            ]
-        );
     }
 }

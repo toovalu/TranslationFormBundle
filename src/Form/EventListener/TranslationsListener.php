@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace A2lix\TranslationFormBundle\Form\EventListener;
 
-use A2lix\AutoFormBundle\Form\Type\AutoType;
+use A2lix\AutoFormBundle\Form\Type\AutoFormType;
 use A2lix\TranslationFormBundle\Form\TranslationFieldsConfigProviderInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Form\FormEvent;
@@ -51,13 +51,13 @@ class TranslationsListener implements EventSubscriberInterface
                 continue;
             }
 
-            $form->add($locale, AutoType::class, [
+            $form->add($locale, AutoFormType::class, [
                 'data_class' => $translationClass,
                 'label' => $formOptions['locale_labels'][$locale] ?? null,
                 'required' => \in_array($locale, $formOptions['required_locales'], true),
                 'block_name' => ('field' === $formOptions['theming_granularity']) ? 'locale' : null,
-                'children' => array_map($this->normalizeLegacyFieldOptions(...), $fieldsOptions[$locale]),
-                'children_excluded' => array_values(array_unique(array_merge(
+                'fields' => array_map($this->normalizeLegacyFieldOptions(...), $fieldsOptions[$locale]),
+                'excluded_fields' => array_values(array_unique(array_merge(
                     ['id', 'locale', 'translatable'],
                     $formOptions['excluded_fields'],
                 ))),
@@ -123,9 +123,9 @@ class TranslationsListener implements EventSubscriberInterface
      */
     private function normalizeLegacyFieldOptions(array $options): array
     {
-        if (isset($options['field_type']) && !isset($options['child_type'])) {
-            $options['child_type'] = $options['field_type'];
-            unset($options['field_type']);
+        if (isset($options['child_type']) && !isset($options['field_type'])) {
+            $options['field_type'] = $options['child_type'];
+            unset($options['child_type']);
         }
 
         if (isset($options['entry_options']) && \is_array($options['entry_options'])) {
